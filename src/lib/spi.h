@@ -1,11 +1,6 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
-#ifndef __AVR_ATmega32A__
-#define __AVR_ATmega32A__
-#include <avr/iom32a.h>
-#endif
-
 #define SPI_DDR  (DDRB)
 #define SPI_PORT (PORTB)
 

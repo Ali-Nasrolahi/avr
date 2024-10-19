@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <util/delay.h>
 
-#include "spi.h"
+#include "lib/spi.h"
 
 void spi_recv(uint8_t data)
 {

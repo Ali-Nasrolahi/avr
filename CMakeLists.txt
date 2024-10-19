@@ -9,26 +9,42 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_VERBOSE_MAKEFILE n)
 
-
 set(ATMEGA328P_OPT  atmega328p  16000000UL  arduino /dev/ttyUSB0 57600)
 set(ATMEGA32A_OPT   atmega32a   1000000UL   arduino /dev/ttyUSB0 19200)
+
+include_directories(src/)
 
 add_executable(
     avr-328p
     src/atmega328p/main.c
-    src/atmega328p/spi.c
-    src/atmega328p/spi.h
 )
 
 add_executable(
     avr-32a
     src/atmega32a/main.c
-    src/atmega32a/spi.c
-    src/atmega32a/spi.h
+)
+
+add_library(
+    avr328p
+    STATIC
+    src/lib/spi.c
+    src/lib/usart.c
+)
+
+add_library(
+    avr32a
+    STATIC
+    src/lib/spi.c
+    src/lib/usart.c
 )
 
 set_avr_opt(avr-328p    ${ATMEGA328P_OPT})
 set_avr_opt(avr-32a     ${ATMEGA32A_OPT})
+set_lib_opt(avr328p     atmega328p 16000000UL)
+set_lib_opt(avr32a      atmega32a 1000000UL)
+
+target_link_libraries(avr-328p  PRIVATE avr328p)
+target_link_libraries(avr-32a   PRIVATE avr32a)
 
 # atmega32a fuses
 set(AVR_L_FUSE 0xA1)

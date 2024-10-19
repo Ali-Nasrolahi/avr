@@ -2,7 +2,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#include "spi.h"
+#include "lib/spi.h"
 
 #ifndef __AVR_ATmega32A__
 #define __AVR_ATmega32A__

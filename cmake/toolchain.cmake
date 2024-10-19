@@ -39,8 +39,6 @@ set(link_opts
 add_compile_options("${compile_opts}")
 add_link_options("${link_opts}")
 
-add_compile_options("-Os")
-
 function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE)
 
     set(map_file ${target}.map)
@@ -125,4 +123,25 @@ function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE)
         ADDITIONAL_MAKE_CLEAN_FILES
         ${hex_file};${lst_file};${eeprom_image};${map_file})
 
+endfunction()
+
+function(set_lib_opt target MCU SPEED)
+
+    target_compile_options(
+        ${target}
+        PRIVATE
+        -mmcu=${MCU}
+    )
+
+    target_compile_definitions(
+        ${target}
+        PRIVATE
+        F_CPU=${SPEED}
+    )
+
+    target_link_options(
+        ${target}
+        PRIVATE
+        -mmcu=${MCU}
+    )
 endfunction()
