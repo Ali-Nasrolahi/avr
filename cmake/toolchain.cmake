@@ -2,22 +2,21 @@ set(CMAKE_SYSTEM_NAME       Generic)
 set(CMAKE_SYSTEM_PROCESSOR  avr)
 set(TARGET                  avr)
 
-# Without that flag CMake is not able to pass test compilation check
+# Without this flag CMake would be not able to pass test compilation check
 #   .Alt:  set(CMAKE_C_COMPILER_WORKS true)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 
-set(CMAKE_AR            ${TARGET}-ar)
-set(CMAKE_ASM_COMPILER  ${TARGET}-as)
-set(CMAKE_C_COMPILER    ${TARGET}-gcc)
-set(CMAKE_CXX_COMPILER  ${TARGET}-g++)
-set(CMAKE_LINKER        ${TARGET}-ld)
-set(CMAKE_OBJCOPY       ${TARGET}-objcopy)
-set(CMAKE_OBJDUMP       ${TARGET}-objdump)
-set(CMAKE_RANLIB        ${TARGET}-ranlib)
-set(CMAKE_SIZE          ${TARGET}-size)
-set(CMAKE_STRIP         ${TARGET}-strip)
-
-find_program(AVR_UPLOADER avrdude REQUIRED)
+find_program(CMAKE_AR            ${TARGET}-ar)
+find_program(CMAKE_ASM_COMPILER  ${TARGET}-as)
+find_program(CMAKE_C_COMPILER    ${TARGET}-gcc)
+find_program(CMAKE_CXX_COMPILER  ${TARGET}-g++)
+find_program(CMAKE_LINKER        ${TARGET}-ld)
+find_program(CMAKE_OBJCOPY       ${TARGET}-objcopy)
+find_program(CMAKE_OBJDUMP       ${TARGET}-objdump)
+find_program(CMAKE_RANLIB        ${TARGET}-ranlib)
+find_program(CMAKE_SIZE          ${TARGET}-size)
+find_program(CMAKE_STRIP         ${TARGET}-strip)
+find_program(AVR_UPLOADER        avrdude REQUIRED)
 
 # Compile and Linking flags
 set(compile_opts
