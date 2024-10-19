@@ -1,5 +1,5 @@
-#include <avr/interrupt.h>
-#include <avr/io.h>
+#pragma once
+#include "common.h"
 
 #define SPI_DDR  (DDRB)
 #define SPI_PORT (PORTB)

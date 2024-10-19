@@ -1,13 +1,5 @@
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <util/delay.h>
-
+#include "lib/common.h"
 #include "lib/spi.h"
-
-#ifndef __AVR_ATmega32A__
-#define __AVR_ATmega32A__
-#include <avr/iom32a.h>
-#endif
 
 #define MS_DELAY  100
 #define LED       (PINC0)

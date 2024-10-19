@@ -15,6 +15,7 @@ set(ATMEGA32A_OPT   atmega32a   1000000UL   arduino /dev/ttyUSB0 19200)
 include_directories(src/)
 
 list(APPEND lib_src
+    src/lib/i2c.c
     src/lib/spi.c
     src/lib/usart.c
 )

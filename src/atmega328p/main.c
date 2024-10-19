@@ -1,8 +1,4 @@
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <stddef.h>
-#include <util/delay.h>
-
+#include "lib/common.h"
 #include "lib/spi.h"
 
 void spi_recv(uint8_t data)

@@ -1,15 +1,7 @@
-#include <avr/io.h>
-#include <util/delay.h>
+#include "common.h"
 
-#if __AVR_ATmega328__
-
-#ifndef __AVR_ATmega328P__
-#include <avr/iom328p.h>
-#endif
-
-#define DO_PRAGMA(x) _Pragma(#x)
-#define TODO(x)      DO_PRAGMA(message("TODO - " #x))
-#define BAUD         (9600)
+#if 0
+#define BAUD (9600)
 
 #include <util/setbaud.h>
 
@@ -37,11 +29,13 @@ void transmitByte(uint8_t data)
     UDR0 = data;
     /* send data */
 }
+
 uint8_t receiveByte(void)
 {
     loop_until_bit_is_set(UCSR0A, RXC0);
     return UDR0;
 }
+
 /* Wait for incoming data */
 /* return register value */
 // Example of a useful printing command
@@ -53,20 +47,15 @@ void printString(const char myString[])
         i++;
     }
 }
-initUSART();
-while (1) {
-    uint8_t by = receiveByte();
-    printString("Your byte is ");
-    transmitByte(by);
-    transmitByte('\r');
-    transmitByte('\n');
-}
-}
-DDRB |= _BV(DDRB5);
-while (1) {
-    PORTB |= _BV(PORTB5);
-    _delay_ms(MS_DELAY);
-    PORTB &= ~_BV(PORTB5);
-    _delay_ms(MS_DELAY);
+
+initUSART()
+{
+    while (1) {
+        uint8_t by = receiveByte();
+        printString("Your byte is ");
+        transmitByte(by);
+        transmitByte('\r');
+        transmitByte('\n');
+    }
 }
 #endif
