@@ -10,8 +10,10 @@ upload_328: all
 upload_32a: all
 	cmake --build build --target upload_avr-32a
 
-flash_isp:
+isp:
 	avrdude -v -p atmega328p -c arduino -P /dev/ttyUSB0 -b 57600 -D -U flash:w:./isp/ArduinoISP.ino.hex:i
 
 clean:
 	cmake --build build --target clean
+
+.PHONY: isp

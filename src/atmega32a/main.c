@@ -1,11 +1,15 @@
 #include "lib/common.h"
+#include "lib/i2c.h"
 #include "lib/spi.h"
 
 #define MS_DELAY  100
-#define LED       (PINC0)
 #define FAST_PWM0 (_BV(WGM00) | _BV(WGM01))
 #define FAST_PWM1 (_BV(WGM10) | _BV(WGM11))
 #define FAST_PWM2 (_BV(WGM20) | _BV(WGM21))
+
+#define LED_DDR  (DDRC)
+#define LED_PORT (PORTC)
+#define LED_PIN  (_BV(PINC2) | _BV(PINC3) | _BV(PINC4))
 
 void test_adc(void)
 {
@@ -51,13 +55,13 @@ void test_basic_timer(void)
 
 ISR(TIMER1_OVF_vect)  // Timer1 ISR
 {
-    PORTC ^= _BV(LED);
+    PORTC ^= LED_PIN;
     TCNT1 = 1;  // for 1 sec at 16 MHz
 }
 
 void test_timer_w_interrupt(void)
 {
-    DDRC |= _BV(LED);
+    DDRC |= LED_PIN;
 
     TCNT1 = 1;  // for 1 sec at 16 MHz
 
@@ -129,13 +133,11 @@ void test_servo(void)
 void setup(void)
 {
     DDRA = PORTA = _BV(PINA0);
-    DDRC = PORTC = (_BV(PINC0) | _BV(PINC1) | _BV(PINC2));
+    LED_DDR = LED_PORT = LED_PIN;
 }
 
 void test_spi_master(void)
 {
-    setup();
-
     spi_init_master(SPI_PRESCALER_4);
     int x = 0;
     while (1) {
@@ -146,18 +148,46 @@ void test_spi_master(void)
     }
 }
 
-static void spi_recv(uint8_t data) { PORTC = data & 7; }
+static void spi_recv(uint8_t data) { PORTC = (PORTC & ~LED_PIN) | (LED_PIN & (data << 2)); }
 
 void test_spi_slave()
 {
-    setup();
     spi_init_slave(spi_recv);
+    while (1) { _delay_ms(1000); }
+}
+
+void test_i2c_master(void)
+{
+    i2c_init_master();
+
+    int x = 0;
+    while (1) {
+        ++x;
+        x &= 7;
+        i2c_send(0x10, x);
+        PORTC = (PORTC & ~LED_PIN) | (LED_PIN & (i2c_recv(0x10) << 2));
+        _delay_ms(500);
+    }
+}
+
+static void i2c_receiver(uint8_t data) { PORTC = (PORTC & ~LED_PIN) | (LED_PIN & (data << 2)); }
+static uint8_t i2c_request(void)
+{
+    static uint8_t data = 0;
+    ++data;
+    data &= 7;
+    return data;
+}
+
+void test_i2c_slave(void)
+{
+    i2c_init_slave(0x10, i2c_receiver, i2c_request);
     while (1) { _delay_ms(1000); }
 }
 
 int main(void)
 {
     setup();
-    test_spi_master();
+    test_i2c_slave();
     while (1) { _delay_ms(1000); }
 }
