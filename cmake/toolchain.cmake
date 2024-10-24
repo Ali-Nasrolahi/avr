@@ -38,6 +38,8 @@ set(link_opts
 add_compile_options("${compile_opts}")
 add_link_options("${link_opts}")
 
+include(${CMAKE_CURRENT_LIST_DIR}/helpers.cmake)
+
 function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE H_FUSE L_FUSE)
 
     set(map_file ${target}.map)
@@ -46,13 +48,13 @@ function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE H_FUSE L_FUSE)
     set(eeprom_image ${target}-eeprom.hex)
     set(AVR_UPLOADER_OPT -p ${MCU} -c ${PROGRAMMER} -b ${BAUDRATE} -P ${PORT})
 
-    message(STATUS "Current MCU is set to: ${MCU}")
-    message(STATUS "Current MCU speed is set to: ${SPEED}")
-    message(STATUS "Current uploader is: ${AVR_UPLOADER}")
-    message(STATUS "Current programmer is: ${PROGRAMMER}")
-    message(STATUS "Current upload port is: ${PORT}")
-    message(STATUS "Current uploader options are: ${AVR_UPLOADER_OPT}")
-    message(STATUS "Current Fuses are: High:${H_FUSE}, Low:${L_FUSE}")
+    message(STATUS "Current MCU is set to: ${Green}${MCU}${CReset}")
+    message(STATUS "Current MCU speed is set to: ${Green}${SPEED}${CReset}")
+    message(STATUS "Current uploader is: ${Green}${AVR_UPLOADER}${CReset}")
+    message(STATUS "Current programmer is: ${Green}${PROGRAMMER}${CReset}")
+    message(STATUS "Current upload port is: ${Green}${PORT}${CReset}")
+    message(STATUS "Current uploader options are: ${Green}${AVR_UPLOADER_OPT}${CReset}")
+    message(STATUS "Current Fuses are: ${Green}High:${H_FUSE}, Low:${L_FUSE}${CReset}")
 
     target_compile_options(
         ${target}
