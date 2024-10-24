@@ -38,13 +38,13 @@ set(link_opts
 add_compile_options("${compile_opts}")
 add_link_options("${link_opts}")
 
-function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE)
+function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE H_FUSE L_FUSE)
 
     set(map_file ${target}.map)
     set(hex_file ${target}.hex)
     set(lst_file ${target}.lst)
     set(eeprom_image ${target}-eeprom.hex)
-    set(AVR_UPLOADER_OPT -p ${MCU} -c ${PROGRAMMER} -b ${BAUDRATE} -U flash:w:${hex_file} -P ${PORT})
+    set(AVR_UPLOADER_OPT -p ${MCU} -c ${PROGRAMMER} -b ${BAUDRATE} -P ${PORT})
 
     message(STATUS "Current MCU is set to: ${MCU}")
     message(STATUS "Current MCU speed is set to: ${SPEED}")
@@ -52,6 +52,7 @@ function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE)
     message(STATUS "Current programmer is: ${PROGRAMMER}")
     message(STATUS "Current upload port is: ${PORT}")
     message(STATUS "Current uploader options are: ${AVR_UPLOADER_OPT}")
+    message(STATUS "Current Fuses are: High:${H_FUSE}, Low:${L_FUSE}")
 
     target_compile_options(
         ${target}
@@ -98,7 +99,7 @@ function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE)
 
     add_custom_target(
         upload_${target}
-        COMMAND ${AVR_UPLOADER} ${AVR_UPLOADER_OPT}
+        COMMAND ${AVR_UPLOADER} ${AVR_UPLOADER_OPT} -U flash:w:${hex_file}
         DEPENDS ${hex_file}
         COMMENT "Uploading ${hex_file} to ${MCU} using ${PROGRAMMER}"
     )
@@ -121,6 +122,19 @@ function(set_avr_opt target MCU SPEED PROGRAMMER PORT BAUDRATE)
         PROPERTY
         ADDITIONAL_MAKE_CLEAN_FILES
         ${hex_file};${lst_file};${eeprom_image};${map_file})
+
+    add_custom_target(
+        ${target}_fuses
+        ${AVR_UPLOADER} ${AVR_UPLOADER_OPT} -n -U lfuse:r:-:h -U hfuse:r:-:h
+        COMMENT "Get fuses from ${MCU}"
+    )
+
+    add_custom_target(
+        ${target}_set_fuses
+        ${AVR_UPLOADER} ${AVR_UPLOADER_OPT} -U hfuse:w:${H_FUSE}:m -U lfuse:w:${L_FUSE}:m
+            COMMENT "Update ${MCU} fuses to HF:${H_FUSE} and LF:${L_FUSE}"
+    )
+
 
 endfunction()
 
