@@ -1,61 +1,53 @@
-#include "common.h"
+#include "usart.h"
+#ifdef __AVR_ATmega32A__
 
-#if 0
-#define BAUD (9600)
+#define UART_UBRR(baud) ((F_CPU / (16UL * baud)) - 1)
 
-#include <util/setbaud.h>
+static int usart_putchar(char, FILE *);
+static int usart_getchar(FILE *);
 
-void initUSART(void)
+static FILE stdio_usart_stdin = FDEV_SETUP_STREAM(NULL, usart_getchar, _FDEV_SETUP_READ);
+static FILE stdio_usart_stdout = FDEV_SETUP_STREAM(usart_putchar, NULL, _FDEV_SETUP_WRITE);
+
+static int usart_putchar(char c, FILE *stream)
 {
-    /* requires BAUD */
-    UBRR0H = UBRRH_VALUE;
-    /* defined in setbaud.h */
-    UBRR0L = UBRRL_VALUE;
-#if USE_2X
-    UCSR0A |= (1 << U2X0);
-#else
-    UCSR0A &= ~(1 << U2X0);
-#endif
-    /* Enable USART transmitter/receiver */
-    UCSR0B = (1 << TXEN0) | (1 << RXEN0);
-    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
-    /* 8 data bits, 1 stop bit */
+    if (c == '\n') usart_putchar('\r', stream);
+    usart_send(c);
+    return 0;
+}
+static int usart_getchar(FILE *stream)
+{
+    (void)stream;
+    return usart_recv();
 }
 
-void transmitByte(uint8_t data)
+/* Public API */
+void usart_init(uint32_t baud)
 {
-    /* Wait for empty transmit buffer */
-    loop_until_bit_is_set(UCSR0A, UDRE0);
-    UDR0 = data;
-    /* send data */
+    UBRRH = UART_UBRR(baud) >> 8;
+    UBRRL = UART_UBRR(baud);
+    UCSRB = _BV(RXEN) | _BV(TXEN);
+    UCSRC = _BV(URSEL) | _BV(UCSZ0) | _BV(UCSZ1);
 }
 
-uint8_t receiveByte(void)
+void usart_send(uint8_t data)
 {
-    loop_until_bit_is_set(UCSR0A, RXC0);
-    return UDR0;
+    loop_until_bit_is_set(UCSRA, UDRE);
+    UDR = data;
 }
 
-/* Wait for incoming data */
-/* return register value */
-// Example of a useful printing command
-void printString(const char myString[])
+uint8_t usart_recv(void)
 {
-    uint8_t i = 0;
-    while (myString[i]) {
-        transmitByte(myString[i]);
-        i++;
-    }
+    loop_until_bit_is_set(UCSRA, RXC);
+    return UDR;
 }
 
-initUSART()
+void usart_enable_stdio(uint32_t baudrate)
 {
-    while (1) {
-        uint8_t by = receiveByte();
-        printString("Your byte is ");
-        transmitByte(by);
-        transmitByte('\r');
-        transmitByte('\n');
-    }
+    usart_init(baudrate);
+    stdin = &stdio_usart_stdin;
+    stdout = &stdio_usart_stdout;
 }
+
+/* Public API */
 #endif

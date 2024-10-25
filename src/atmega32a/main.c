@@ -1,6 +1,7 @@
 #include "lib/common.h"
 #include "lib/i2c.h"
 #include "lib/spi.h"
+#include "lib/usart.h"
 
 #define MS_DELAY  100
 #define FAST_PWM0 (_BV(WGM00) | _BV(WGM01))
@@ -188,6 +189,6 @@ void test_i2c_slave(void)
 int main(void)
 {
     setup();
-    test_i2c_slave();
+    usart_enable_stdio(4800);
     while (1) { _delay_ms(1000); }
 }
