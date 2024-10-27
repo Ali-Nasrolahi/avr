@@ -1,4 +1,5 @@
 #include "lib/hal.h"
+#include "lib/sd/sd.h"
 
 void spi_recv(uint8_t data) { PORTD = (data & 0xf) << 2; }
 
@@ -52,7 +53,12 @@ void test_i2c_slave(void)
 
 int main(void)
 {
-    DDRD = _BV(PIND5) | _BV(PIND4) | _BV(PIND3) | _BV(PIND2);
-    test_i2c_master();
-    while (1) { _delay_ms(1000); }
+    DDRB |= _BV(PINB5);
+    sd_init();
+    usart_enable_stdio(9600);
+    printf("stdio is enabled!\n");
+    while (1) {
+        PORTB ^= _BV(PINB5);
+        _delay_ms(1000);
+    }
 }

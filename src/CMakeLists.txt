@@ -9,6 +9,9 @@ list(APPEND lib_src
     lib/hal/i2c.c
     lib/hal/spi.c
     lib/hal/usart.c
+
+    # SD Card
+    lib/sd/sd.c
 )
 
 add_library(avr328p     STATIC ${lib_src})
