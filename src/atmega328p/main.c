@@ -1,6 +1,4 @@
-#include "lib/common.h"
-#include "lib/i2c.h"
-#include "lib/spi.h"
+#include "lib/hal.h"
 
 void spi_recv(uint8_t data) { PORTD = (data & 0xf) << 2; }
 

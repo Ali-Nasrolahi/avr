@@ -1,7 +1,4 @@
-#include "lib/common.h"
-#include "lib/i2c.h"
-#include "lib/spi.h"
-#include "lib/usart.h"
+#include "lib/hal.h"
 
 #define MS_DELAY  100
 #define FAST_PWM0 (_BV(WGM00) | _BV(WGM01))

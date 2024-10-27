@@ -1,4 +1,4 @@
-#include "lib/i2c.h"
+#include "i2c.h"
 
 static void (*slave_recv_f)(uint8_t);
 static uint8_t (*slave_req_f)(void);

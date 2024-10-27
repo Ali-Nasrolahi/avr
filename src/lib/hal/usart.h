@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-
 #include "common.h"
 
 void usart_init(uint32_t baudrate);
