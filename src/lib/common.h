@@ -10,3 +10,9 @@
 
 #define DO_PRAGMA(x) _Pragma(#x)
 #define TODO(x)      DO_PRAGMA(message("TODO - " #x))
+
+/* Helper macros/functions */
+
+#define SET_BIT(_mask, _bitno)    (_mask |= _BV(_bitno))
+#define UNSET_BIT(_mask, _bitno)  (_mask &= ~_BV(_bitno))
+#define TOGGLE_BIT(_mask, _bitno) (_mask ^= _BV(_bitno))

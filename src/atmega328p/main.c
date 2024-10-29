@@ -54,9 +54,9 @@ void test_i2c_slave(void)
 int main(void)
 {
     DDRB |= _BV(PINB5);
-    sd_init();
     usart_enable_stdio(9600);
     printf("stdio is enabled!\n");
+    sd_init();
     while (1) {
         PORTB ^= _BV(PINB5);
         _delay_ms(1000);
