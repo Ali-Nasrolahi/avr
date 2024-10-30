@@ -2,6 +2,35 @@
 
 #include "util/crc7.h"
 
+union {
+    struct {
+        uint32_t voltage_range : 28;
+        uint8_t uhs_ii_card_status : 1;
+        uint8_t ccs : 1;  /* Card Capacity Status */
+        uint8_t busy : 1; /* Card power up status bit */
+    } __attribute__((packed));
+    uint32_t raw;  // 32-bit overlay for direct access
+} sd_ocr;
+
+union {
+    struct {
+        uint32_t manufacture_data;
+        uint8_t cmd_support : 4;
+        uint8_t reserved : 2;
+        uint8_t sd_specx : 4;
+        uint8_t sd_spec4 : 1;
+        uint8_t ex_security : 4;
+        uint8_t sd_spec3 : 1;
+        uint8_t bus_width : 4;
+        uint8_t sd_security : 3;
+        uint8_t data_stat_after_erase : 1;
+        uint8_t sd_spec : 4;
+        uint8_t scr_struct : 4;
+
+    } __attribute__((packed));
+    uint64_t raw;
+} sd_scr;
+
 static uint8_t sd_send_cmd(uint8_t cmd, uint32_t args)
 {
     uint8_t resp, cmd_buf[5];
@@ -45,14 +74,14 @@ static uint32_t sd_recv_r7(void)
     return r7resp;
 }
 
-static inline uint32_t sd_read_ocr(void) { return sd_send_cmd(58, 0) == 0x1 ? sd_recv_r7() : 0; }
+static inline uint32_t sd_read_ocr(void) { return sd_send_cmd(58, 0) < 0x2 ? sd_recv_r7() : 0; }
 
 void sd_init(void)
 {
     crc7_init();
 
     _delay_ms(10);
-    spi_init_master(SPI_PRESCALER_4);
+    spi_init_master(SPI_PRESCALER_128);
 
     SET_BIT(SPI_DDR, SPI_SS);   // As an ouput
     SET_BIT(SPI_PORT, SPI_SS);  // set high/disable
@@ -84,15 +113,20 @@ void sd_init(void)
             resp = sd_send_cmd(41, 0x40000000);
             if (resp == 0x0) printf(SD_LOG_PREFIX "CMD41 OK!\n");
             else printf(SD_LOG_PREFIX "CMD41 Fail: 0x%lx\n", resp);
-            _delay_ms(100);
         } else {
             printf(SD_LOG_PREFIX "CMD55 Fail: 0x%lx\n", resp);
             return;  // FAIL
         }
     } while (resp);
 
-    // TODO debug me
-    resp = sd_read_ocr();
-    if (resp) printf(SD_LOG_PREFIX "OCR OK! 0x%lx\n", resp);
-    else printf(SD_LOG_PREFIX "OCR failed 0x%lx\n", resp);
+    printf("Init succeed!\nRetrieve Register values OCR/SCR/CID/CSD\n");
+
+    sd_ocr.raw = sd_read_ocr();
+    if (sd_ocr.raw) printf(SD_LOG_PREFIX "OCR:\tOK!\tValue: 0x%lx\n", sd_ocr.raw);
+    else printf(SD_LOG_PREFIX "OCR: failed 0x%lx\n", sd_ocr.raw);
+
+    if (sd_ocr.busy) printf(SD_LOG_PREFIX "OCR:\tPower Up completed!\n");
+    if (sd_ocr.ccs) printf(SD_LOG_PREFIX "OCR:\tHight capacity card detected (SDHC/SDXC)!\n");
+
+    // Retrieve register values SCR / CID / CSD
 }
