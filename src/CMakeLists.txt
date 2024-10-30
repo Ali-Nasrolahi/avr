@@ -12,6 +12,9 @@ list(APPEND lib_src
 
     # SD Card
     lib/sd/sd.c
+
+    # Util
+    lib/util/crc7.c
 )
 
 add_library(avr328p     STATIC ${lib_src})

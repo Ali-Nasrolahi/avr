@@ -1,5 +1,6 @@
 #include "lib/hal.h"
 #include "lib/sd/sd.h"
+#include "lib/util/crc7.h"
 
 void spi_recv(uint8_t data) { PORTD = (data & 0xf) << 2; }
 
