@@ -90,3 +90,11 @@ uint8_t i2c_recv(uint8_t addr)
     i2c_end();
     return data;
 }
+
+void i2c_recvn(uint8_t addr, void* buf, size_t buf_size)
+{
+    (void)buf;
+    (void)addr;
+    (void)buf_size;
+    (void)i2c_rx_ack;
+}

@@ -5,5 +5,6 @@
 
 #define SD_LOG_PREFIX "SD Card Driver: "
 #define SD_DUMMY_BYTE (0xff)
+#define SD_ACMD_FAIL  (0x39)
 
 void sd_init(void);
