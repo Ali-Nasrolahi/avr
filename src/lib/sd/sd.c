@@ -1,36 +1,21 @@
 #include "sd.h"
 
+#include "sd-type.h"
 #include "util/crc7.h"
 
-union {
-    struct {
-        uint32_t voltage_range : 28;
-        uint8_t uhs_ii_card_status : 1;
-        uint8_t ccs : 1;   // Card Capacity Status
-        uint8_t busy : 1;  // Card power up status bit
-    } __attribute__((packed));
+static inline void sd_delay(void)
+{
+    SPI_DISABLE_SS;
+    for (uint8_t i = 0; i < 10; ++i) spi_tx_rx(SD_DUMMY_BYTE);
+}
 
-    uint32_t raw;  // 32-bit overlay for direct access
-} sd_ocr;
-
-union {
-    struct {
-        uint8_t scr_struct : 4;
-        uint8_t sd_spec : 4;
-        uint8_t data_stat_after_erase : 1;
-        uint8_t sd_security : 3;
-        uint8_t bus_width : 4;
-        uint8_t sd_spec3 : 1;
-        uint8_t ex_security : 4;
-        uint8_t sd_spec4 : 1;
-        uint8_t sd_specx : 4;
-        uint8_t reserved : 2;
-        uint8_t cmd_support : 4;
-        uint32_t manufacture_data;
-    } __attribute__((packed));
-
-    uint64_t raw;
-} sd_scr;
+static inline uint8_t sd_wait_for_valid_resp(void)
+{
+    uint8_t resp;
+    SPI_ENABLE_SS;
+    while ((resp = spi_tx_rx(SD_DUMMY_BYTE)) == 0xff || resp == 0xfe /* data block */);
+    return resp;
+}
 
 static uint8_t sd_send_cmd(uint8_t cmd, uint32_t args)
 {
@@ -42,8 +27,7 @@ static uint8_t sd_send_cmd(uint8_t cmd, uint32_t args)
     cmd_buf[3] = (uint8_t)(args >> 8);
     cmd_buf[4] = (uint8_t)(args);
 
-    SET_BIT(SPI_DDR, SPI_SS);     // As an ouput
-    UNSET_BIT(SPI_PORT, SPI_SS);  // CS/SS Low/Enable
+    SPI_ENABLE_SS;
 
     spi_tx_rx(cmd_buf[0]);
     spi_tx_rx(cmd_buf[1]);
@@ -54,7 +38,7 @@ static uint8_t sd_send_cmd(uint8_t cmd, uint32_t args)
 
     while ((resp = spi_tx_rx(SD_DUMMY_BYTE)) == SD_DUMMY_BYTE);
 
-    SET_BIT(SPI_PORT, SPI_SS);  // CS/SS High/disable
+    SPI_DISABLE_SS;
 
     return resp;
 }
@@ -80,26 +64,37 @@ static uint8_t sd_send_acmd(uint8_t acmd, uint32_t args)
 
 static uint32_t sd_recv_32(void)
 {
-    uint32_t r7resp = 0;
-    SET_BIT(SPI_DDR, SPI_SS);     // As an ouput
-    UNSET_BIT(SPI_PORT, SPI_SS);  // CS/SS Low/Enable
+    uint32_t resp = (uint32_t)sd_wait_for_valid_resp() << 24;
 
-    r7resp |= (((uint32_t)spi_tx_rx(SD_DUMMY_BYTE)) << 24);
-    r7resp |= (((uint32_t)spi_tx_rx(SD_DUMMY_BYTE)) << 16);
-    r7resp |= (spi_tx_rx(SD_DUMMY_BYTE) << 8);
-    r7resp |= (spi_tx_rx(SD_DUMMY_BYTE));
+    resp |= (((uint32_t)spi_tx_rx(SD_DUMMY_BYTE)) << 16);
+    resp |= (spi_tx_rx(SD_DUMMY_BYTE) << 8);
+    resp |= (spi_tx_rx(SD_DUMMY_BYTE));
 
-    SET_BIT(SPI_PORT, SPI_SS);  // CS/SS High/disable
+    SPI_DISABLE_SS;
 
-    return r7resp;
+    return resp;
+}
+
+static uint64_t sd_recv_64(void)
+{
+    uint64_t resp = (uint64_t)sd_wait_for_valid_resp() << 56;
+
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 48);
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 40);
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 32);
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 24);
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 16);
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 8);
+    resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE));
+
+    SPI_DISABLE_SS;
+
+    return resp;
 }
 
 static inline uint32_t sd_read_ocr(void) { return sd_send_cmd(58, 0) < 2 ? sd_recv_32() : 0; }
 
-static inline uint64_t sd_read_scr(void)
-{
-    return sd_send_acmd(51, 0) < 2 ? ((uint64_t)sd_recv_32() << 32) | sd_recv_32() : 0;
-}
+static inline uint64_t sd_read_scr(void) { return sd_send_acmd(51, 0) < 2 ? sd_recv_64() : 0; }
 
 static int8_t _sd_init(void)
 {
@@ -109,11 +104,8 @@ static int8_t _sd_init(void)
     crc7_init();
     spi_init_master(SPI_PRESCALER_128);
 
-    SET_BIT(SPI_DDR, SPI_SS);   // As an ouput
-    SET_BIT(SPI_PORT, SPI_SS);  // set high/disable
-
     // 1. At least 74 dummy clocks
-    for (uint8_t i = 0; i < 10; ++i) spi_tx_rx(SD_DUMMY_BYTE);
+    sd_delay();
 
     // 2. Software reset (CMD0)
     if ((resp = sd_send_cmd(0, 0)) == 1) printf(SD_LOG_PREFIX "Software reset OK!\n");
@@ -126,6 +118,7 @@ static int8_t _sd_init(void)
 
     // 4. Supported Voltage range
     resp = sd_read_ocr();
+    printf("ocr %lx\n", resp);
     if (resp && ((resp & 0x00380000) == 0x00380000))
         printf(SD_LOG_PREFIX "Supported voltage range OK!\n");
     else return printf(SD_LOG_PREFIX "Supported voltage range failed: 0x%lx\n", resp), -1;
@@ -153,10 +146,6 @@ void sd_init(void)
         printf(SD_LOG_PREFIX "SCR: OK! High 4 bytes: 0x%lx Low 4 bytes: 0x%lx\n",
                (uint32_t)(sd_scr.raw >> 32), (uint32_t)(sd_scr.raw));
     } else printf(SD_LOG_PREFIX "SCR: failed 0x%lx\n", (uint32_t)(sd_scr.raw));
-
-    // DEBUG ME
-    printf("scr struct 0x%x\nsd spec 0x%x\ndata stat 0x%xbus width 0x%x", sd_scr.scr_struct,
-           sd_scr.sd_spec, sd_scr.data_stat_after_erase, sd_scr.bus_width);
 
     // Retrieve register values CID / CSD
 }
