@@ -66,10 +66,10 @@ static uint32_t sd_recv_32(void)
 {
     uint32_t resp = (uint32_t)sd_wait_for_valid_resp() << 24;
 
+    SPI_ENABLE_SS;
     resp |= (((uint32_t)spi_tx_rx(SD_DUMMY_BYTE)) << 16);
     resp |= (spi_tx_rx(SD_DUMMY_BYTE) << 8);
     resp |= (spi_tx_rx(SD_DUMMY_BYTE));
-
     SPI_DISABLE_SS;
 
     return resp;
@@ -79,6 +79,7 @@ static uint64_t sd_recv_64(void)
 {
     uint64_t resp = (uint64_t)sd_wait_for_valid_resp() << 56;
 
+    SPI_ENABLE_SS;
     resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 48);
     resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 40);
     resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 32);
@@ -86,7 +87,6 @@ static uint64_t sd_recv_64(void)
     resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 16);
     resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE) << 8);
     resp |= ((uint64_t)spi_tx_rx(SD_DUMMY_BYTE));
-
     SPI_DISABLE_SS;
 
     return resp;
@@ -95,6 +95,48 @@ static uint64_t sd_recv_64(void)
 static inline uint32_t sd_read_ocr(void) { return sd_send_cmd(58, 0) < 2 ? sd_recv_32() : 0; }
 
 static inline uint64_t sd_read_scr(void) { return sd_send_acmd(51, 0) < 2 ? sd_recv_64() : 0; }
+
+static bool sd_read_csd(void* buf)
+{
+    uint8_t status;
+    uint8_t* buf_ = (uint8_t*)buf;
+
+    if (sd_send_cmd(9, 0)) return printf("cmd9 failed!\n"), false;
+
+    SPI_ENABLE_SS;
+    while ((status = spi_tx_rx(SD_DUMMY_BYTE)) == 0xff);
+    if (status != 0xfe /* Start Block Token */) return printf("cmd9 invalid token\n"), false;
+
+    for (uint8_t i = 0; i < 16; ++i) buf_[i] = spi_tx_rx(SD_DUMMY_BYTE);
+
+    /* 2 bytes CRC */
+    spi_tx_rx(SD_DUMMY_BYTE);
+    spi_tx_rx(SD_DUMMY_BYTE);
+    SPI_DISABLE_SS;
+
+    return true;
+}
+
+static bool sd_read_cid(void* buf)
+{
+    uint8_t status;
+    uint8_t* buf_ = (uint8_t*)buf;
+
+    if (sd_send_cmd(10, 0)) return printf("cmd10 failed!\n"), false;
+
+    SPI_ENABLE_SS;
+    while ((status = spi_tx_rx(SD_DUMMY_BYTE)) == 0xff);
+    if (status != 0xfe /* Start Block Token */) return printf("cmd10 invalid token\n"), false;
+
+    for (uint8_t i = 0; i < 16; ++i) buf_[i] = spi_tx_rx(SD_DUMMY_BYTE);
+
+    /* 2 bytes CRC */
+    spi_tx_rx(SD_DUMMY_BYTE);
+    spi_tx_rx(SD_DUMMY_BYTE);
+    SPI_DISABLE_SS;
+
+    return true;
+}
 
 static int8_t _sd_init(void)
 {
@@ -147,5 +189,25 @@ void sd_init(void)
                (uint32_t)(sd_scr.raw >> 32), (uint32_t)(sd_scr.raw));
     } else printf(SD_LOG_PREFIX "SCR: failed 0x%lx\n", (uint32_t)(sd_scr.raw));
 
-    // Retrieve register values CID / CSD
+    /* TODO: CSD Structure should be verified */
+    if (sd_read_csd(&sd_csd)) printf("CSD Read ok!\n");
+    else printf("CSD READ FAILED\n");
+
+    /* TODO: CID Structure should be verified */
+    if (sd_read_cid(&sd_cid)) printf("CID Read ok!\n");
+    else printf("CID READ FAILED\n");
+}
+
+bool sd_read_sector(uint32_t lba, void* buf)
+{
+    (void)lba;
+    (void)buf;
+    return false;
+}
+
+bool sd_write_sector(uint32_t lba, void* buf)
+{
+    (void)lba;
+    (void)buf;
+    return false;
 }

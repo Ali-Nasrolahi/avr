@@ -8,3 +8,6 @@
 #define SD_ACMD_FAIL  (0x39)
 
 void sd_init(void);
+
+bool sd_read_sector(uint32_t lba, void* buf);
+bool sd_write_sector(uint32_t lba, void* buf);

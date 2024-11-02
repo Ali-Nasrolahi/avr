@@ -3,6 +3,7 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <util/delay.h>
