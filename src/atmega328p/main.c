@@ -1,6 +1,7 @@
-#include "lib/hal.h"
-#include "lib/sd/sd.h"
-#include "lib/util/crc7.h"
+#include <stdlib.h>
+
+#include "avrlib/hal.h"
+#include "sd/sd.h"
 
 void spi_recv(uint8_t data) { PORTD = (data & 0xf) << 2; }
 
@@ -54,12 +55,14 @@ void test_i2c_slave(void)
 
 int main(void)
 {
-    DDRB |= _BV(PINB5);
+    static char buf_[350];
     usart_enable_stdio(9600);
     printf("stdio is enabled!\n");
     sd_init();
-    while (1) {
-        PORTB ^= _BV(PINB5);
-        _delay_ms(1000);
-    }
+
+    if (sd_read_sector(0, 512 - 250, buf_)) printf("\n\nREAD Ok\n\n");
+    else printf("READ FAILED\n");
+    for (size_t i = 0; i < 250; i++) printf("0x%x ", buf_[i]);
+
+    while (1) { _delay_ms(1000); }
 }

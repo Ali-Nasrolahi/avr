@@ -1,4 +1,4 @@
-#include "lib/hal.h"
+#include "avrlib/hal.h"
 
 #define MS_DELAY  100
 #define FAST_PWM0 (_BV(WGM00) | _BV(WGM01))

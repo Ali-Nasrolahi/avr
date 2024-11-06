@@ -2,19 +2,19 @@ set(ATMEGA328P_OPT  atmega328p  16000000UL  arduino /dev/ttyUSB0 57600 0xD9 0xFF
 set(ATMEGA32A_OPT   atmega32a   1000000UL   arduino /dev/ttyUSB0 19200 0xD7 0xA1)
 
 include_directories(.)
-include_directories(lib)
+include_directories(avrlib)
 
 list(APPEND lib_src
     # HAL
-    lib/hal/i2c.c
-    lib/hal/spi.c
-    lib/hal/usart.c
+    avrlib/hal/i2c.c
+    avrlib/hal/spi.c
+    avrlib/hal/usart.c
 
     # SD Card
-    lib/sd/sd.c
+    sd/sd.c
 
     # Util
-    lib/util/crc7.c
+    avrlib/util/crc7.c
 )
 
 add_library(avr328p     STATIC ${lib_src})

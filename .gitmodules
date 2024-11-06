@@ -1,0 +1,6 @@
+[submodule "src/avrlib"]
+	path = src/avrlib
+	url = git@github.com:Ali-Nasrolahi/avrlib.git
+[submodule "src/sd"]
+	path = src/sd
+	url = git@github.com:Ali-Nasrolahi/avr-sdcard.git
