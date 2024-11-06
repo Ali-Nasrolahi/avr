@@ -7,5 +7,5 @@ I use an arduino as my AVR programmer, so I included a *ISP* program as well.
 
 Furthermore, following repositories also included:
 
-- My self-developed AVR Library
-- A basic SD Card driver with I/O capabilities
+- My self-developed AVR Library, [avrlib](https://github.com/Ali-Nasrolahi/avrlib)
+- A basic SD Card driver with I/O capabilities, [avr-sdcard](https://github.com/Ali-Nasrolahi/avr-sdcard)
