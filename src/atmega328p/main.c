@@ -1,68 +1,67 @@
 #include <stdlib.h>
 
 #include "avrlib/hal.h"
-#include "sd/sd.h"
+#include "avrlib/utility.h"
 
-void spi_recv(uint8_t data) { PORTD = (data & 0xf) << 2; }
+#if 0 /* Arduino gist */
 
-void test_spi_slave(void)
+int buttonState = 0;  // variable for reading the pushbutton status
+
+void setup()
 {
-    DDRD = _BV(PIND5) | _BV(PIND4) | _BV(PIND3) | _BV(PIND2);
-    spi_init_slave(spi_recv);
-    while (1) { _delay_ms(1000); }
+    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(2, OUTPUT);
+    pinMode(11, OUTPUT);
+    pinMode(14, INPUT);
+    pinMode(15, INPUT);
+    digitalWrite(LED_BUILTIN, 0);
 }
-
-void test_spi_master(void)
+void loop()
 {
-    spi_init_master(SPI_PRESCALER_64);
-    int x = 0;
-    while (1) {
-        ++x;
-        x &= 7;
-        spi_tx_rx(x);
-        _delay_ms(500);
+    buttonState = digitalRead(14);
+    if (buttonState == HIGH) {
+        delay(100);
+        buttonState = digitalRead(14);
+        if (buttonState == HIGH) {
+            bool state = !digitalRead(LED_BUILTIN);
+            digitalWrite(LED_BUILTIN, state);
+            digitalWrite(2, state);
+        }
     }
+    analogWrite(11, analogRead(15) / 4);
 }
+#endif
 
-void test_i2c_master(void)
+void setup(void)
 {
-    i2c_init_master();
+    DDRD |= _BV(PIND2 /* EN/DIS */);
+    DDRB |= _BV(PINB5 /* LED */) | _BV(PINB3 /* PWM OUTPUT */);
+    DDRC &= ~(_BV(PINC0) /* button */ | _BV(PINC1) /* Pot Analog Inputs */);
 
-    int x = 0;
-    while (1) {
-        ++x;
-        x &= 7;
-        i2c_send(0x10, x);
-        PORTD = (i2c_recv(0x10) & 0xf) << 2;
-        _delay_ms(500);
-    }
-}
+    UNSET_BIT(PORTD, PIND2);
+    UNSET_BIT(PORTB, PINB5);
+    UNSET_BIT(PORTB, PINB3);
 
-static void i2c_receiver(uint8_t data) { PORTD = (data & 0xf) << 2; }
-static uint8_t i2c_request(void)
-{
-    static uint8_t data = 0;
-    ++data;
-    data &= 7;
-    return data;
-}
+    adc_init(ADC_REF_AVCC, 1, ADC_PRESCALER_128);
 
-void test_i2c_slave(void)
-{
-    i2c_init_slave(0x10, i2c_receiver, i2c_request);
-    while (1) { _delay_ms(1000); }
+    pwm_init(&TCCR2A, &TCCR2B);
 }
 
 int main(void)
 {
-    static char buf_[350];
-    usart_enable_stdio(9600);
-    printf("stdio is enabled!\n");
-    sd_init();
+    bool enabled = false;
 
-    if (sd_read_sector(0, 512 - 250, buf_)) printf("\n\nREAD Ok\n\n");
-    else printf("READ FAILED\n");
-    for (size_t i = 0; i < 250; i++) printf("0x%x ", buf_[i]);
+    setup();
+    usart_enable_stdio(9600), printf("stdio is enabled!\n");
 
-    while (1) { _delay_ms(1000); }
+    while (1) {
+        if (bit_is_set(PINC, PINC0)) {
+            _delay_ms(100);
+            if (bit_is_set(PINC, PINC0)) {
+                if (enabled) UNSET_BIT(PORTD, PIND2), UNSET_BIT(PORTB, PINB5), enabled = false;
+                else SET_BIT(PORTD, PIND2), SET_BIT(PORTB, PINB5), enabled = true;
+            }
+        }
+        OCR2A = (adc_read() >> 2);
+    }
 }

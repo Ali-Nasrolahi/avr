@@ -15,6 +15,8 @@ list(APPEND lib_src
 
     # Util
     avrlib/util/crc7.c
+    avrlib/util/pwm.c
+    avrlib/util/adc.c
 )
 
 add_library(avr328p     STATIC ${lib_src})
