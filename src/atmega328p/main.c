@@ -35,33 +35,53 @@ void loop()
 void setup(void)
 {
     DDRD |= _BV(PIND2 /* EN/DIS */);
-    DDRB |= _BV(PINB5 /* LED */) | _BV(PINB3 /* PWM OUTPUT */);
-    DDRC &= ~(_BV(PINC0) /* button */ | _BV(PINC1) /* Pot Analog Inputs */);
+    DDRB |= _BV(PINB1 /* PWM 1 */) | _BV(PINB5 /* LED */) | _BV(PINB3 /* PWM 2 */);
+    DDRC &= ~(_BV(PINC0) /* enable/disable */ | _BV(PINC1) /* Pot Analog Inputs */ |
+              _BV(PINC2) /* Direction */);
 
     UNSET_BIT(PORTD, PIND2);
-    UNSET_BIT(PORTB, PINB5);
+    UNSET_BIT(PORTB, PINB1);
     UNSET_BIT(PORTB, PINB3);
+    UNSET_BIT(PORTB, PINB5);
 
     adc_init(ADC_REF_AVCC, 1, ADC_PRESCALER_128);
 
-    pwm_init(&TCCR2A, &TCCR2B);
+    pwm_init(&TCCR1A, &TCCR1B);  // OCR1A, PINB1
+    pwm_init(&TCCR2A, &TCCR2B);  // OCR2A, PINB3
 }
 
 int main(void)
 {
     bool enabled = false;
+    bool direction = false;
 
     setup();
     usart_enable_stdio(9600), printf("stdio is enabled!\n");
 
     while (1) {
         if (bit_is_set(PINC, PINC0)) {
-            _delay_ms(100);
+            _delay_ms(250);
             if (bit_is_set(PINC, PINC0)) {
                 if (enabled) UNSET_BIT(PORTD, PIND2), UNSET_BIT(PORTB, PINB5), enabled = false;
                 else SET_BIT(PORTD, PIND2), SET_BIT(PORTB, PINB5), enabled = true;
             }
         }
-        OCR2A = (adc_read() >> 2);
+
+        if (bit_is_set(PINC, PINC2)) {
+            _delay_ms(250);
+            if (bit_is_set(PINC, PINC2)) {
+                if (direction) {
+                    pwm_deinit(&TCCR1A);
+                    pwm_init(&TCCR2A, &TCCR2B);
+                    direction = false;
+                } else {
+                    pwm_deinit(&TCCR2A);
+                    pwm_init(&TCCR1A, &TCCR1B);
+                    direction = true;
+                }
+            }
+        }
+        if (direction) OCR1A = adc_read();
+        else OCR2A = (adc_read() >> 2);
     }
 }

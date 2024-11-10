@@ -43,7 +43,7 @@ void test_basic_timer(void)
     while (1) {
         if (TCNT0 > 250) {
             if ((++cnt) == 1000) {
-                if (bit_is_set(PORTC, PINC0)) PORTC &= ~_BV(PINC0);
+                if (bit_is_set(PINC, PINC0)) PORTC &= ~_BV(PINC0);
                 else PORTC = _BV(PINC0);
                 cnt = 0;
             }
