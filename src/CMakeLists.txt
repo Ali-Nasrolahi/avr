@@ -17,6 +17,9 @@ list(APPEND lib_src
     avrlib/util/crc7.c
     avrlib/util/pwm.c
     avrlib/util/adc.c
+
+    # Motor Control
+    avrlib/mctl/stepper.c
 )
 
 add_library(avr328p     STATIC ${lib_src})
