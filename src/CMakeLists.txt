@@ -10,9 +10,6 @@ list(APPEND lib_src
     avrlib/hal/spi.c
     avrlib/hal/usart.c
 
-    # SD Card
-    sd/sd.c
-
     # Util
     avrlib/util/crc7.c
     avrlib/util/pwm.c
